@@ -9,7 +9,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./main-nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./main-nginx/nginx-cloudflare.conf:/etc/nginx/nginx.conf:ro
       - ./main-nginx/ssl:/etc/nginx/ssl:ro
       - ./certbot/conf:/etc/letsencrypt:ro
       - ./certbot/www:/var/www/certbot:ro
@@ -19,7 +19,7 @@ services:
       - keycloak-network
     restart: unless-stopped
     depends_on:
-      - keycloak-nginx
+      - keycloak
 
   # Keycloak stack (without exposing ports externally)
   postgres:
@@ -75,20 +75,6 @@ services:
       retries: 10
       start_period: 120s
 
-  # Keycloak's internal nginx (no external ports)
-  keycloak-nginx:
-    image: nginx:alpine
-    container_name: keycloak-nginx
-    volumes:
-      - ./keycloak-nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - keycloak_nginx_logs:/var/log/nginx
-    depends_on:
-      - keycloak
-    networks:
-      - keycloak-network
-      - proxy-network
-    restart: unless-stopped
-
   # Certbot for SSL certificates
   certbot:
     image: certbot/certbot
@@ -104,8 +90,6 @@ volumes:
   postgres_data:
     driver: local
   main_nginx_logs:
-    driver: local
-  keycloak_nginx_logs:
     driver: local
 
 networks:

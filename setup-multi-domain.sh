@@ -30,7 +30,6 @@ echo "   SSL email: $SSL_EMAIL"
 # Create directory structure
 echo "📁 Creating directory structure..."
 mkdir -p main-nginx/ssl
-mkdir -p keycloak-nginx
 mkdir -p certbot/conf
 mkdir -p certbot/www
 
@@ -78,7 +77,7 @@ http {
 EOF
 
 # Start main services
-docker compose -f docker-compose-main-proxy.yml up -d postgres keycloak keycloak-nginx
+docker-compose -f docker-compose-main-proxy.yml up -d postgres keycloak
 
 # Start temporary main nginx
 docker run -d --name temp-main-nginx \
@@ -113,15 +112,15 @@ docker rm temp-main-nginx
 echo "🚀 Step 3: Starting full SSL setup..."
 
 # Start main nginx with SSL
-docker compose -f docker-compose-main-proxy.yml up -d main-nginx
+docker-compose -f docker-compose-main-proxy.yml up -d main-nginx
 
 echo "🔄 Step 4: Setting up certificate renewal..."
 
 # Create renewal script
 cat > renew-keycloak-ssl.sh << 'EOF'
 #!/bin/bash
-docker compose -f docker-compose-main-proxy.yml exec certbot certbot renew --quiet
-docker compose -f docker-compose-main-proxy.yml exec main-nginx nginx -s reload
+docker-compose -f docker-compose-main-proxy.yml exec certbot certbot renew --quiet
+docker-compose -f docker-compose-main-proxy.yml exec main-nginx nginx -s reload
 EOF
 
 chmod +x renew-keycloak-ssl.sh
