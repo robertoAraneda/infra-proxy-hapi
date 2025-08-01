@@ -1,31 +1,23 @@
 #!/bin/bash
 
-# Keycloak-only SSL setup script with reverse proxy structure
-# Ready for easy expansion to multiple services later
-
+# Full SSL setup script for all domains (Keycloak + Kong + Konga)
 set -e
 
-echo "🚀 Setting up Keycloak with reverse proxy and SSL..."
+echo "🚀 Setting up SSL for all domains from scratch..."
 
 # Load environment variables
-if [ -f .env-multi-domain ]; then
-    export $(cat .env-multi-domain | grep -v '^#' | xargs)
+if [ -f .env ]; then
+    export $(cat .env | grep -v '^#' | xargs)
 else
-    echo "❌ Error: .env-multi-domain file not found!"
-    echo "Please create .env-multi-domain with your domain configurations"
-    exit 1
-fi
-
-# Check required variables
-if [ -z "$KEYCLOAK_HOSTNAME" ] || [ -z "$SSL_EMAIL" ]; then
-    echo "❌ Error: Missing required environment variables"
-    echo "Required: KEYCLOAK_HOSTNAME, SSL_EMAIL"
+    echo "❌ Error: .env file not found!"
     exit 1
 fi
 
 echo "📋 Configuration:"
-echo "   Keycloak domain: $KEYCLOAK_HOSTNAME"
-echo "   SSL email: $SSL_EMAIL"
+echo "   Keycloak: $KEYCLOAK_HOSTNAME"
+echo "   Kong: $KONG_HOSTNAME"
+echo "   Konga: $KONGA_HOSTNAME"
+echo "   Email: $SSL_EMAIL"
 
 # Create directory structure
 echo "📁 Creating directory structure..."
@@ -33,21 +25,14 @@ mkdir -p main-nginx/ssl
 mkdir -p certbot/conf
 mkdir -p certbot/www
 
-# Generate default self-signed certificate for unknown domains
-echo "🔐 Generating default SSL certificate..."
+# Generate default self-signed certificate
+echo "🔐 Generating temporary SSL certificate..."
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout main-nginx/ssl/default.key \
     -out main-nginx/ssl/default.crt \
     -subj "/C=US/ST=State/L=City/O=Org/CN=default"
 
-# Update main nginx config with actual domain
-echo "⚙️  Updating nginx configuration with your domain..."
-sed -i.bak "s/auth\.yourdomain\.com/$KEYCLOAK_HOSTNAME/g" main-nginx/nginx.conf
-
-# Step 1: Start services without SSL first
-echo "🔄 Step 1: Starting services for certificate validation..."
-
-# Create temporary main nginx config for certificate requests
+# Create temporary nginx config for certificate validation
 cat > main-nginx/nginx-temp.conf << 'EOF'
 events {
     worker_connections 1024;
@@ -76,10 +61,14 @@ http {
 }
 EOF
 
-# Start main services
-docker-compose -f docker-compose-main-proxy.yml up -d postgres keycloak
+# Start backend services
+echo "🚀 Starting backend services..."
+docker compose up -d postgres kong-postgres kong-migration
+sleep 15
+docker compose up -d keycloak kong konga-prepare konga
 
-# Start temporary main nginx
+# Start temporary nginx for certificate validation
+echo "🌐 Starting temporary nginx for ACME challenge..."
 docker run -d --name temp-main-nginx \
     --network $(basename $(pwd))_proxy-network \
     -p 80:80 \
@@ -90,9 +79,8 @@ docker run -d --name temp-main-nginx \
 echo "⏳ Waiting for services to be ready..."
 sleep 30
 
-echo "🔐 Step 2: Requesting SSL certificate..."
-
-# Request certificate for Keycloak domain
+# Request certificates for all domains
+echo "🔐 Requesting SSL certificates for all domains..."
 docker run --rm \
     --network $(basename $(pwd))_proxy-network \
     -v $(pwd)/certbot/conf:/etc/letsencrypt \
@@ -102,48 +90,31 @@ docker run --rm \
     -w /var/www/certbot \
     --email $SSL_EMAIL \
     -d $KEYCLOAK_HOSTNAME \
+    -d $KONG_HOSTNAME \
+    -d $KONGA_HOSTNAME \
     --agree-tos \
     --no-eff-email
 
 # Stop temporary nginx
+echo "🛑 Stopping temporary nginx..."
 docker stop temp-main-nginx
 docker rm temp-main-nginx
 
-echo "🚀 Step 3: Starting full SSL setup..."
-
 # Start main nginx with SSL
-docker-compose -f docker-compose-main-proxy.yml up -d main-nginx
-
-echo "🔄 Step 4: Setting up certificate renewal..."
-
-# Create renewal script
-cat > renew-keycloak-ssl.sh << 'EOF'
-#!/bin/bash
-docker-compose -f docker-compose-main-proxy.yml exec certbot certbot renew --quiet
-docker-compose -f docker-compose-main-proxy.yml exec main-nginx nginx -s reload
-EOF
-
-chmod +x renew-keycloak-ssl.sh
+echo "🌐 Starting main nginx with SSL..."
+docker compose up -d main-nginx
 
 echo ""
-echo "✅ Keycloak SSL setup complete!"
+echo "✅ Full SSL setup complete!"
 echo ""
-echo "🌐 Your Keycloak is now available at:"
+echo "🌐 Your services are now available at:"
 echo "   🔐 Keycloak: https://$KEYCLOAK_HOSTNAME"
 echo "   🔐 Keycloak Admin: https://$KEYCLOAK_HOSTNAME/admin"
+echo "   🚪 Kong Gateway: https://$KONG_HOSTNAME"
+echo "   🚪 Kong Admin API: https://$KONG_HOSTNAME/admin-api"
+echo "   📊 Konga Admin: https://$KONGA_HOSTNAME"
 echo ""
 echo "📋 Next steps:"
-echo "1. Make sure $KEYCLOAK_HOSTNAME points to this server's IP address"
-echo "2. Test the setup by visiting https://$KEYCLOAK_HOSTNAME"
-echo "3. Set up automatic certificate renewal with: ./renew-keycloak-ssl.sh"
-echo ""
-echo "🔧 To add more services later:"
-echo "1. Add them to docker-compose-main-proxy.yml"
-echo "2. Add upstream and server blocks to main-nginx/nginx.conf"
-echo "3. Update .env-multi-domain with new domain"
-echo "4. Request new certificate with certbot"
-echo ""
-echo "📁 Architecture ready for expansion:"
-echo "   - Main reverse proxy handles all traffic on ports 80/443"
-echo "   - Internal services run on isolated networks"
-echo "   - SSL certificates managed centrally"
+echo "1. Test all services"
+echo "2. Configure Konga with Kong Admin URL: http://kong:8001"
+echo "3. Set up automatic renewal: ./renew-ssl.sh"
