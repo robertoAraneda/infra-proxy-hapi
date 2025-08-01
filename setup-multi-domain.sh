@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# setup-multi-domain.sh
 # Full SSL setup script for all domains (Keycloak + Kong + Konga)
 set -e
 

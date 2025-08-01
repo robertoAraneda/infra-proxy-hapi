@@ -126,7 +126,7 @@ services:
     container_name: konga
     environment:
       DB_ADAPTER: postgres
-      DB_URI: postgresql://${KONG_POSTGRES_USER}:${KONG_POSTGRES_PASSWORD}@kong-postgres:5432/kongaa
+      DB_URI: postgresql://${KONG_POSTGRES_USER}:${KONG_POSTGRES_PASSWORD}@kong-postgres:5432/konga
       KONGA_LOG_LEVEL: warn
       TOKEN_SECRET: some_secret_token
       NODE_ENV: development

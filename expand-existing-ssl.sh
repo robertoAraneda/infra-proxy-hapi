@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# expand-existing-ssl.sh
 # Expand existing Keycloak certificate to include Kong and Konga domains
 set -e
 

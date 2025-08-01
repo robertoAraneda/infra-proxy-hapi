@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# check-certificates.sh
 # SSL Certificate Status Checker
 # Shows detailed information about your SSL certificates
 
