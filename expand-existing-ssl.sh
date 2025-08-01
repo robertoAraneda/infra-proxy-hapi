@@ -30,16 +30,16 @@ echo "✅ Found existing certificate for $KEYCLOAK_HOSTNAME"
 
 # Start services if not running
 echo "🚀 Starting services..."
-docker-compose up -d postgres kong-postgres kong-migration
+docker compose up -d postgres kong-postgres kong-migration
 sleep 15
-docker-compose up -d keycloak kong konga-prepare konga
+docker compose up -d keycloak kong konga-prepare konga
 
 echo "⏳ Waiting for services to be ready..."
 sleep 30
 
 # Expand the certificate to include new domains
 echo "🔐 Expanding certificate to include all domains..."
-docker-compose exec certbot certbot certonly \
+docker compose exec certbot certbot certonly \
     --webroot \
     -w /var/www/certbot \
     --email $SSL_EMAIL \
@@ -52,11 +52,11 @@ docker-compose exec certbot certbot certonly \
 
 # Start main nginx
 echo "🌐 Starting main nginx..."
-docker-compose up -d main-nginx
+docker compose up -d main-nginx
 
 # Reload nginx to use updated certificate
 echo "🔄 Reloading nginx..."
-docker-compose exec main-nginx nginx -s reload
+docker compose exec main-nginx nginx -s reload
 
 echo ""
 echo "✅ Certificate expanded successfully!"
