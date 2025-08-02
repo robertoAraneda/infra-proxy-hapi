@@ -22,8 +22,8 @@ echo ""
 # 1. Check Let's Encrypt certificate details
 echo "📜 Let's Encrypt Certificate Information:"
 echo "----------------------------------------"
-if docker-compose ps certbot | grep -q "Up\|running"; then
-    docker-compose exec certbot certbot certificates 2>/dev/null || echo "❌ Could not get certificate info from certbot"
+if docker compose ps certbot | grep -q "Up\|running"; then
+    docker compose exec certbot certbot certificates 2>/dev/null || echo "❌ Could not get certificate info from certbot"
 else
     echo "⚠️  Certbot container not running"
     # Check certificates directly from filesystem
@@ -84,11 +84,11 @@ fi
 # 4. Check nginx SSL configuration
 echo "⚙️  Nginx SSL Configuration:"
 echo "---------------------------"
-if docker-compose ps main-nginx | grep -q "Up\|running"; then
+if docker compose ps main-nginx | grep -q "Up\|running"; then
     echo "✅ Main nginx is running"
     
     # Test nginx configuration
-    nginx_test=$(docker-compose exec main-nginx nginx -t 2>&1)
+    nginx_test=$(docker compose exec main-nginx nginx -t 2>&1)
     if echo "$nginx_test" | grep -q "syntax is ok"; then
         echo "✅ Nginx configuration is valid"
     else
@@ -151,5 +151,5 @@ fi
 echo ""
 echo "🔧 Useful commands:"
 echo "   - Renew certificates: ./renew-ssl.sh"
-echo "   - View nginx logs: docker-compose logs main-nginx"
+echo "   - View nginx logs: docker compose logs main-nginx"
 echo "   - Test certificate: openssl s_client -servername $KEYCLOAK_HOSTNAME -connect $KEYCLOAK_HOSTNAME:443"
