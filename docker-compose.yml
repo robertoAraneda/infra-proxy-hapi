@@ -179,6 +179,7 @@ services:
   fhir-proxy:
     image: robertoaraneda/fhir-proxy:v1.1
     container_name: fhir-proxy
+    user: "1000:1000"
     environment:
       PORT: ${FHIR_PROXY_PORT}
       FHIR_SERVER_URL: ${FHIR_SERVER_URL}
