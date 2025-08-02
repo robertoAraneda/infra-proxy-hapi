@@ -178,7 +178,7 @@ services:
 
   # FHIR Proxy
   fhir-proxy:
-    image: robertoaraneda/fhir-proxy:v1.1
+    image: robertoaraneda/fhir-proxy:v1.2
     container_name: fhir-proxy
     user: "1000:1000"
     environment:
