@@ -275,6 +275,8 @@ services:
       - main-nginx
 
 volumes:
+  postgres_data:
+    driver: local
   proxy_postgres_data:
     driver: local
   kong_postgres_data:
