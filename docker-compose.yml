@@ -64,6 +64,46 @@ services:
       retries: 5
       start_period: 30s
 
+   # FHIR PostgreSQL
+  fhir-postgres:
+    image: postgres:14.6
+    container_name: fhir-postgres
+    environment:
+      POSTGRES_DB: ${FHIR_POSTGRES_DB}
+      POSTGRES_USER: ${FHIR_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${FHIR_POSTGRES_PASSWORD}
+    volumes:
+      - fhir_postgres_data:/var/lib/postgresql/data
+    networks:
+      - fhir-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${FHIR_POSTGRES_USER} -d ${FHIR_POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # PostgreSQL proxy
+  postgres-proxy:
+    image: postgres:15-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_DB: ${PROXY_POSTGRES_DB}
+      POSTGRES_USER: ${PROXY_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${PROXY_POSTGRES_PASSWORD}
+    volumes:
+      - proxy_postgres_data:/var/lib/postgresql/data
+      - ./init-proxy-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - fhir-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PROXY_POSTGRES_USER} -d ${PROXY_POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Kong migration job
   kong-migration:
     image: kong:3.6.1
@@ -117,6 +157,64 @@ services:
       interval: 10s
       timeout: 10s
       retries: 3
+
+  # HAPI FHIR Server
+  hapi-fhir:
+    image: hapiproject/hapi:v8.2.0-2 # Use the latest stable version
+    container_name: hapi-fhir
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://fhir-postgres:5432/${FHIR_POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${FHIR_POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${FHIR_POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_DRIVERCLASSNAME: org.postgresql.Driver
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgres94Dialect
+      HAPI_FHIR_USE_APACHE_ADDRESS_STRATEGY: true
+    depends_on:
+      fhir-postgres:
+        condition: service_healthy
+    networks:
+      - fhir-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/fhir/metadata"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # FHIR Proxy
+  fhir-proxy:
+    image: robertoaraneda/fhir-proxy:v1.0
+    container_name: fhir-proxy
+    environment:
+      PORT: ${FHIR_PROXY_PORT}
+      FHIR_SERVER_URL: ${FHIR_SERVER_URL}
+      LOG_LEVEL: ${FHIR_LOG_LEVEL}
+      ENVIRONMENT: ${FHIR_ENVIRONMENT}
+      LOG_DIR: ${FHIR_LOG_DIR}
+      DATABASE_URL: ${FHIR_DATABASE_URL}
+      LOG_TO_DB: ${FHIR_LOG_TO_DB}
+      MAX_FILE_SIZE: ${FHIR_MAX_FILE_SIZE}
+      MAX_BACKUPS: ${FHIR_MAX_BACKUPS}
+      JWT_SECRET: ${FHIR_JWT_SECRET}
+      JWT_SKIP_VERIFY: ${FHIR_JWT_SKIP_VERIFY}
+      USE_CUSTOM_VALIDATION_RESPONSE: ${FHIR_USE_CUSTOM_VALIDATION_RESPONSE}
+    depends_on:
+      hapi-fhir:
+        condition: service_healthy
+      fhir-postgres:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - fhir-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 
   # Konga - Kong Admin GUI
@@ -177,9 +275,11 @@ services:
       - main-nginx
 
 volumes:
-  postgres_data:
+  proxy_postgres_data:
     driver: local
   kong_postgres_data:
+    driver: local
+  fhir_postgres_data:
     driver: local
   main_nginx_logs:
     driver: local
@@ -190,4 +290,6 @@ networks:
   keycloak-network:
     driver: bridge
   kong-network:
+    driver: bridge
+  fhir-network:
     driver: bridge
