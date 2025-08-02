@@ -13,8 +13,7 @@ BEGIN
 END
 $$;
 
--- Grant permissions to loguser on the current database (proxy database)
-GRANT CONNECT ON DATABASE CURRENT_DATABASE TO loguser;
+-- Grant basic permissions to loguser
 GRANT USAGE ON SCHEMA public TO loguser;
 GRANT CREATE ON SCHEMA public TO loguser;
 
@@ -45,52 +44,19 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create indexes for better performance (using IF NOT EXISTS to prevent conflicts)
-DO $$
-BEGIN
-    -- Check and create indexes only if they don't exist
-    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_audit_logs_timestamp') THEN
-        CREATE INDEX idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_audit_logs_resource') THEN
-        CREATE INDEX idx_audit_logs_resource ON audit_logs(fhir_resource);
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_audit_logs_phi') THEN
-        CREATE INDEX idx_audit_logs_phi ON audit_logs(phi_accessed) WHERE phi_accessed = true;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_audit_logs_status') THEN
-        CREATE INDEX idx_audit_logs_status ON audit_logs(status_code) WHERE status_code >= 400;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_audit_logs_user_id') THEN
-        CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id) WHERE user_id IS NOT NULL;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_audit_logs_client_id') THEN
-        CREATE INDEX idx_audit_logs_client_id ON audit_logs(client_id) WHERE client_id IS NOT NULL;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_audit_logs_operation') THEN
-        CREATE INDEX idx_audit_logs_operation ON audit_logs(operation);
-    END IF;
-    
-    -- JSONB indexes for searching within JSON fields
-    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_audit_logs_jwt_claims') THEN
-        CREATE INDEX idx_audit_logs_jwt_claims ON audit_logs USING GIN (jwt_claims);
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_audit_logs_request_body') THEN
-        CREATE INDEX idx_audit_logs_request_body ON audit_logs USING GIN (request_body);
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_audit_logs_response_body') THEN
-        CREATE INDEX idx_audit_logs_response_body ON audit_logs USING GIN (response_body);
-    END IF;
-END
-$$;
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON audit_logs(fhir_resource);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_phi ON audit_logs(phi_accessed) WHERE phi_accessed = true;
+CREATE INDEX IF NOT EXISTS idx_audit_logs_status ON audit_logs(status_code) WHERE status_code >= 400;
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id) WHERE user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_audit_logs_client_id ON audit_logs(client_id) WHERE client_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_audit_logs_operation ON audit_logs(operation);
+
+-- JSONB indexes for searching within JSON fields
+CREATE INDEX IF NOT EXISTS idx_audit_logs_jwt_claims ON audit_logs USING GIN (jwt_claims);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_request_body ON audit_logs USING GIN (request_body);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_response_body ON audit_logs USING GIN (response_body);
 
 -- Grant all necessary permissions to loguser
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO loguser;
