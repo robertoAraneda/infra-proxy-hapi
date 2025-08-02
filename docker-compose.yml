@@ -212,7 +212,7 @@ services:
 
   # FHIR Playground Frontend
   fhir-playground:
-    image: robertoaraneda/fhir-proxy-client:v1.0
+    image: robertoaraneda/fhir-proxy-client:v1.1
     container_name: fhir-playground
     networks:
       - proxy-network
