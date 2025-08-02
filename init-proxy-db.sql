@@ -2,11 +2,19 @@
 -- Initialize FHIR logs database for audit logging
 
 -- Create log user and database
-CREATE USER loguser WITH PASSWORD 'logpass';
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'loguser') THEN
+        CREATE USER loguser WITH PASSWORD 'logpass';
+    END IF;
+END
+$$;
+
 CREATE DATABASE fhir_logs OWNER loguser;
 
 -- Grant permissions
-GRANT ALL PRIVILEGES ON DATABASE fhir_logs TO loguser;
+GRANT ALL PRIVILEGES ON DATABASE ${PROXY_POSTGRES_DB} TO loguser;
+GRANT ALL PRIVILEGES ON SCHEMA public TO loguser;
 
 -- Connect to fhir_logs database
 \c fhir_logs;
