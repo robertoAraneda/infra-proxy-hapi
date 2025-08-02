@@ -135,6 +135,7 @@ services:
       KONG_PG_DATABASE: ${KONG_POSTGRES_DB}
       KONG_PG_USER: ${KONG_POSTGRES_USER}
       KONG_PG_PASSWORD: ${KONG_POSTGRES_PASSWORD}
+      KONG_PLUGINS: bundled, token-introspection
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_ADMIN_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
