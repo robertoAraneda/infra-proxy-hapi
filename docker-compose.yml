@@ -179,11 +179,11 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 200s
 
   # FHIR Proxy
   fhir-proxy:
-    image: robertoaraneda/fhir-proxy:v1.0
+    image: robertoaraneda/fhir-proxy:v1.1
     container_name: fhir-proxy
     environment:
       PORT: ${FHIR_PROXY_PORT}
