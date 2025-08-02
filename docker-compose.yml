@@ -193,8 +193,6 @@ services:
       JWT_SKIP_VERIFY: ${FHIR_JWT_SKIP_VERIFY}
       USE_CUSTOM_VALIDATION_RESPONSE: ${FHIR_USE_CUSTOM_VALIDATION_RESPONSE}
     depends_on:
-      hapi-fhir:
-        condition: service_healthy
       fhir-postgres:
         condition: service_healthy
     volumes:
