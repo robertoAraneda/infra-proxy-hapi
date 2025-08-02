@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# check-certificates.sh
 # SSL Certificate Status Checker
 # Shows detailed information about your SSL certificates
 
@@ -17,13 +16,14 @@ echo "📋 Checking certificates for:"
 echo "   - $KEYCLOAK_HOSTNAME"
 echo "   - $KONG_HOSTNAME"
 echo "   - $KONGA_HOSTNAME"
+echo "   - $PLAYGROUND_HOSTNAME"
 echo ""
 
 # 1. Check Let's Encrypt certificate details
 echo "📜 Let's Encrypt Certificate Information:"
 echo "----------------------------------------"
-if docker compose ps certbot | grep -q "Up\|running"; then
-    docker compose exec certbot certbot certificates 2>/dev/null || echo "❌ Could not get certificate info from certbot"
+if docker-compose ps certbot | grep -q "Up\|running"; then
+    docker-compose exec certbot certbot certificates 2>/dev/null || echo "❌ Could not get certificate info from certbot"
 else
     echo "⚠️  Certbot container not running"
     # Check certificates directly from filesystem
@@ -37,7 +37,7 @@ echo ""
 # 2. Check certificate expiry dates
 echo "📅 Certificate Expiry Information:"
 echo "--------------------------------"
-for domain in $KEYCLOAK_HOSTNAME $KONG_HOSTNAME $KONGA_HOSTNAME; do
+for domain in $KEYCLOAK_HOSTNAME $KONG_HOSTNAME $KONGA_HOSTNAME $PLAYGROUND_HOSTNAME; do
     echo "🔍 Checking $domain..."
     
     # Try to connect and get certificate info
@@ -84,11 +84,11 @@ fi
 # 4. Check nginx SSL configuration
 echo "⚙️  Nginx SSL Configuration:"
 echo "---------------------------"
-if docker compose ps main-nginx | grep -q "Up\|running"; then
+if docker-compose ps main-nginx | grep -q "Up\|running"; then
     echo "✅ Main nginx is running"
     
     # Test nginx configuration
-    nginx_test=$(docker compose exec main-nginx nginx -t 2>&1)
+    nginx_test=$(docker-compose exec main-nginx nginx -t 2>&1)
     if echo "$nginx_test" | grep -q "syntax is ok"; then
         echo "✅ Nginx configuration is valid"
     else
@@ -103,7 +103,7 @@ echo ""
 # 5. Check SSL connectivity for each domain
 echo "🌐 SSL Connectivity Test:"
 echo "------------------------"
-for domain in $KEYCLOAK_HOSTNAME $KONG_HOSTNAME $KONGA_HOSTNAME; do
+for domain in $KEYCLOAK_HOSTNAME $KONG_HOSTNAME $KONGA_HOSTNAME $PLAYGROUND_HOSTNAME; do
     echo "🔗 Testing HTTPS connection to $domain..."
     
     # Test HTTP status
@@ -151,5 +151,5 @@ fi
 echo ""
 echo "🔧 Useful commands:"
 echo "   - Renew certificates: ./renew-ssl.sh"
-echo "   - View nginx logs: docker compose logs main-nginx"
+echo "   - View nginx logs: docker-compose logs main-nginx"
 echo "   - Test certificate: openssl s_client -servername $KEYCLOAK_HOSTNAME -connect $KEYCLOAK_HOSTNAME:443"
