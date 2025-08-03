@@ -221,3 +221,23 @@ BEGIN
     END IF;
 END
 $$;
+
+CREATE TABLE IF NOT EXISTS exercises (
+                                         id VARCHAR(36) PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_by VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT true
+    );
+
+-- Add exercise columns to existing audit_logs table
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS exercise_id VARCHAR(36);
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS has_errors BOOLEAN DEFAULT false;
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS has_warnings BOOLEAN DEFAULT false;
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_exercises_active ON exercises(is_active);
+CREATE INDEX IF NOT EXISTS idx_exercises_created_at ON exercises(created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_exercise_id ON audit_logs(exercise_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_has_errors ON audit_logs(has_errors);
