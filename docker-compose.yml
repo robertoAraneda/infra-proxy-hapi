@@ -309,4 +309,4 @@ networks:
 
 configs:
   hapi:
-    file: ./hapi.application.yml
+    file: ./application.yml
