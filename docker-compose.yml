@@ -165,6 +165,9 @@ services:
   hapi-fhir:
     image: hapiproject/hapi:v8.2.0-2 # Use the latest stable version
     container_name: hapi-fhir
+    configs:
+      - source: hapi
+        target: /app/config/application.yaml
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://fhir-postgres:5432/${FHIR_POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${FHIR_POSTGRES_USER}
@@ -303,3 +306,7 @@ networks:
     driver: bridge
   fhir-network:
     driver: bridge
+
+configs:
+  hapi:
+    file: ./hapi.application.yml
