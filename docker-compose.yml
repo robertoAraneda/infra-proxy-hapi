@@ -120,8 +120,6 @@ services:
     networks:
       - certification-network
     restart: unless-stopped
-    ports:
-      - 5433:5432
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${FHIR_CERTIFICATION_POSTGRES_USER} -d ${FHIR_CERTIFICATION_POSTGRES_DB} -p 5432"]
       interval: 10s
