@@ -370,6 +370,8 @@ volumes:
     driver: local
   main_nginx_logs:
     driver: local
+  fhir_certification_postgres_data:
+    driver: local
 
 networks:
   proxy-network:
