@@ -298,10 +298,8 @@ services:
     depends_on:
       fhir-certification-postgres:
         condition: service_healthy
-      keycloak:
-        condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/certification/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -352,12 +350,6 @@ services:
     networks:
       - keycloak-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 100s
 
   # Certbot for SSL certificates
   certbot:
