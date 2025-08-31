@@ -295,12 +295,17 @@ services:
       - kong-network
       - keycloak-network
     restart: unless-stopped
+    depends_on:
+      fhir-certification-postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
 
   # Konga - Kong Admin GUI
   konga:
@@ -347,6 +352,12 @@ services:
     networks:
       - keycloak-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   # Certbot for SSL certificates
   certbot:
