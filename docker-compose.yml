@@ -107,21 +107,23 @@ services:
 
   # PostgresSQL FHIR Certification NestJS API
   fhir-certification-postgres:
-    image: postgres:15
+    image: postgres:15.13-alpine
     container_name: fhir-certification-postgres
     environment:
       POSTGRES_DB: ${FHIR_CERTIFICATION_POSTGRES_DB}
       POSTGRES_USER: ${FHIR_CERTIFICATION_POSTGRES_USER}
       POSTGRES_PASSWORD: ${FHIR_CERTIFICATION_POSTGRES_PASSWORD}
+      TZ: 'America/Santiago'
+      PGPORT: 5432
     volumes:
       - fhir_certification_postgres_data:/var/lib/postgresql/data
     networks:
-      - fhir-network
+      - certification-network
     restart: unless-stopped
     ports:
       - 5433:5432
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${FHIR_CERTIFICATION_POSTGRES_USER} -d ${FHIR_CERTIFICATION_POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${FHIR_CERTIFICATION_POSTGRES_USER} -d ${FHIR_CERTIFICATION_POSTGRES_DB} -p 5432"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -293,9 +295,9 @@ services:
       ADMIN_EMAIL: admin@cegconsultores.com
       ADMIN_PASSWORD: admin123%
     networks:
-      - fhir-network
       - kong-network
       - keycloak-network
+      - certification-network
     restart: unless-stopped
     depends_on:
       fhir-certification-postgres:
@@ -386,6 +388,8 @@ networks:
   kong-network:
     driver: bridge
   fhir-network:
+    driver: bridge
+  certification-network:
     driver: bridge
 
 configs:
