@@ -256,7 +256,7 @@ services:
       PROJECT_NAME: ceg-nest-certification-backend
       NODE_ENV: development
       PORT: 3000
-      API_PREFIX: /api/v1
+      API_PREFIX: certification/api/v1
 
       # Database Configuration
       DB_HOST: fhir-certification-postgres
