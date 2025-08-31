@@ -289,7 +289,7 @@ services:
       KEYCLOAK_CLIENT_SECRET: jGzXCkT36iGo3epnNpojd6LW4g7EDyM8
 
       # Migration Configuration
-      MIGRATIONS_PATH: src/infrastructure/database/migrations/*.ts
+      MIGRATIONS_PATH: dist/src/infrastructure/database/migrations/*.js
 
       # Admin User Configuration (for initialization)
       ADMIN_EMAIL: admin@cegconsultores.com
