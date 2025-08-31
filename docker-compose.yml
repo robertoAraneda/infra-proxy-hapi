@@ -66,44 +66,64 @@ services:
       start_period: 30s
 
    # FHIR PostgreSQL
-  fhir-postgres:
-    image: postgres:14.6
-    container_name: fhir-postgres
+  # fhir-postgres:
+  #   image: postgres:14.6
+  #   container_name: fhir-postgres
+  #   environment:
+  #     POSTGRES_DB: ${FHIR_POSTGRES_DB}
+  #     POSTGRES_USER: ${FHIR_POSTGRES_USER}
+  #     POSTGRES_PASSWORD: ${FHIR_POSTGRES_PASSWORD}
+  #   volumes:
+  #     - fhir_postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - fhir-network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${FHIR_POSTGRES_USER} -d ${FHIR_POSTGRES_DB}"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #     start_period: 30s
+
+  # PostgreSQL proxy
+  # postgres-proxy:
+  #   image: postgres:15-alpine
+  #   container_name: postgres
+  #   environment:
+  #     POSTGRES_DB: ${PROXY_POSTGRES_DB}
+  #     POSTGRES_USER: ${PROXY_POSTGRES_USER}
+  #     POSTGRES_PASSWORD: ${PROXY_POSTGRES_PASSWORD}
+  #   volumes:
+  #     - proxy_postgres_data:/var/lib/postgresql/data
+  #     - ./init-proxy-db.sql:/docker-entrypoint-initdb.d/init.sql
+  #   networks:
+  #     - fhir-network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${PROXY_POSTGRES_USER} -d ${PROXY_POSTGRES_DB}"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+  # PostgresSQL FHIR Certification NestJS API
+  fhir-certification-postgres:
+    image: postgres:15
+    container_name: fhir-certification-postgres
     environment:
-      POSTGRES_DB: ${FHIR_POSTGRES_DB}
-      POSTGRES_USER: ${FHIR_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${FHIR_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${FHIR_CERTIFICATION_POSTGRES_DB}
+      POSTGRES_USER: ${FHIR_CERTIFICATION_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${FHIR_CERTIFICATION_POSTGRES_PASSWORD}
     volumes:
-      - fhir_postgres_data:/var/lib/postgresql/data
+      - fhir_certification_postgres_data:/var/lib/postgresql/data
     networks:
       - fhir-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${FHIR_POSTGRES_USER} -d ${FHIR_POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${FHIR_CERTIFICATION_POSTGRES_USER} -d ${FHIR_CERTIFICATION_POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
-
-  # PostgreSQL proxy
-  postgres-proxy:
-    image: postgres:15-alpine
-    container_name: postgres
-    environment:
-      POSTGRES_DB: ${PROXY_POSTGRES_DB}
-      POSTGRES_USER: ${PROXY_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${PROXY_POSTGRES_PASSWORD}
-    volumes:
-      - proxy_postgres_data:/var/lib/postgresql/data
-      - ./init-proxy-db.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - fhir-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PROXY_POSTGRES_USER} -d ${PROXY_POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   # Kong migration job
   kong-migration:
@@ -162,57 +182,57 @@ services:
       retries: 3
 
   # HAPI FHIR Server
-  hapi-fhir:
-    image: hapiproject/hapi:v8.2.0-2 # Use the latest stable version
-    container_name: hapi-fhir
-    configs:
-      - source: hapi
-        target: /app/config/application.yaml
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://fhir-postgres:5432/${FHIR_POSTGRES_DB}
-      SPRING_DATASOURCE_USERNAME: ${FHIR_POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${FHIR_POSTGRES_PASSWORD}
-      SPRING_DATASOURCE_DRIVERCLASSNAME: org.postgresql.Driver
-      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgres94Dialect
-    depends_on:
-      fhir-postgres:
-        condition: service_healthy
-    networks:
-      - fhir-network
-    restart: unless-stopped
+  # hapi-fhir:
+  #   image: hapiproject/hapi:v8.2.0-2 # Use the latest stable version
+  #   container_name: hapi-fhir
+  #   configs:
+  #     - source: hapi
+  #       target: /app/config/application.yaml
+  #   environment:
+  #     SPRING_DATASOURCE_URL: jdbc:postgresql://fhir-postgres:5432/${FHIR_POSTGRES_DB}
+  #     SPRING_DATASOURCE_USERNAME: ${FHIR_POSTGRES_USER}
+  #     SPRING_DATASOURCE_PASSWORD: ${FHIR_POSTGRES_PASSWORD}
+  #     SPRING_DATASOURCE_DRIVERCLASSNAME: org.postgresql.Driver
+  #     SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgres94Dialect
+  #   depends_on:
+  #     fhir-postgres:
+  #       condition: service_healthy
+  #   networks:
+  #     - fhir-network
+  #   restart: unless-stopped
 
   # FHIR Proxy
-  fhir-proxy:
-    image: robertoaraneda/fhir-proxy:v1.14
-    container_name: fhir-proxy
-    user: "1000:1000"
-    environment:
-      PORT: ${FHIR_PROXY_PORT}
-      FHIR_SERVER_URL: ${FHIR_SERVER_URL}
-      LOG_LEVEL: ${FHIR_LOG_LEVEL}
-      ENVIRONMENT: ${FHIR_ENVIRONMENT}
-      LOG_DIR: ${FHIR_LOG_DIR}
-      DATABASE_URL: ${FHIR_DATABASE_URL}
-      LOG_TO_DB: ${FHIR_LOG_TO_DB}
-      MAX_FILE_SIZE: ${FHIR_MAX_FILE_SIZE}
-      MAX_BACKUPS: ${FHIR_MAX_BACKUPS}
-      JWT_SECRET: ${FHIR_JWT_SECRET}
-      JWT_SKIP_VERIFY: ${FHIR_JWT_SKIP_VERIFY}
-      USE_CUSTOM_VALIDATION_RESPONSE: ${FHIR_USE_CUSTOM_VALIDATION_RESPONSE}
-    depends_on:
-      fhir-postgres:
-        condition: service_healthy
-    volumes:
-      - ./logs:/app/logs
-    networks:
-      - fhir-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/proxy/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+  # fhir-proxy:
+  #   image: robertoaraneda/fhir-proxy:v1.14
+  #   container_name: fhir-proxy
+  #   user: "1000:1000"
+  #   environment:
+  #     PORT: ${FHIR_PROXY_PORT}
+  #     FHIR_SERVER_URL: ${FHIR_SERVER_URL}
+  #     LOG_LEVEL: ${FHIR_LOG_LEVEL}
+  #     ENVIRONMENT: ${FHIR_ENVIRONMENT}
+  #     LOG_DIR: ${FHIR_LOG_DIR}
+  #     DATABASE_URL: ${FHIR_DATABASE_URL}
+  #     LOG_TO_DB: ${FHIR_LOG_TO_DB}
+  #     MAX_FILE_SIZE: ${FHIR_MAX_FILE_SIZE}
+  #     MAX_BACKUPS: ${FHIR_MAX_BACKUPS}
+  #     JWT_SECRET: ${FHIR_JWT_SECRET}
+  #     JWT_SKIP_VERIFY: ${FHIR_JWT_SKIP_VERIFY}
+  #     USE_CUSTOM_VALIDATION_RESPONSE: ${FHIR_USE_CUSTOM_VALIDATION_RESPONSE}
+  #   depends_on:
+  #     fhir-postgres:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ./logs:/app/logs
+  #   networks:
+  #     - fhir-network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/proxy/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
 
   # FHIR Playground Frontend
   fhir-playground:
@@ -227,6 +247,60 @@ services:
       timeout: 10s
       retries: 3
       start_period: 20s
+
+  # FHIR -Certification NestJS API
+  fhir-certification:
+    image: robertoaraneda/ceg-nest-certification-backend:v1.0
+    container_name: fhir-certification
+    environment:
+      PROJECT_NAME: ceg-nest-certification-backend
+      NODE_ENV: development
+      PORT: 3000
+      API_PREFIX: /api/v1
+
+      # Database Configuration
+      DB_HOST: fhir-certification-postgres
+      DB_PORT: 5432
+      DB_USER: ${FHIR_CERTIFICATION_POSTGRES_USER}
+      DB_PASSWORD: ${FHIR_CERTIFICATION_POSTGRES_PASSWORD}
+      DB_NAME: ${FHIR_CERTIFICATION_POSTGRES_DB}
+      DB_SSL: false
+      DB_SCHEMA: public
+      DB_POOL_MAX: 10
+      DB_POOL_MIN: 0
+      DB_POOL_ACQUIRE: 30000
+      DB_POOL_IDLE: 10000
+
+      # Keycloak Configuration (REQUIRED - Application will fail to start without these)
+      # Base URL of your Keycloak instance (without trailing slash)
+      KEYCLOAK_BASE_URL: http://keycloak:8080
+
+      # Keycloak realm name where your application is configured
+      KEYCLOAK_REALM: certification-realm
+
+      # Client ID of your application in Keycloak (used for authentication)
+      KEYCLOAK_CLIENT_ID: certification-fhir
+
+      # Client secret from your Keycloak client configuration
+      KEYCLOAK_CLIENT_SECRET: jGzXCkT36iGo3epnNpojd6LW4g7EDyM8
+
+      # Migration Configuration
+      MIGRATIONS_PATH: src/infrastructure/database/migrations/*.ts
+
+      # Admin User Configuration (for initialization)
+      ADMIN_EMAIL: admin@cegconsultores.com
+      ADMIN_PASSWORD: admin123%
+    networks:
+      - fhir-network
+      - kong-network
+      - keycloak-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # Konga - Kong Admin GUI
   konga:
