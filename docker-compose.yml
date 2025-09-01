@@ -275,23 +275,23 @@ services:
 
       # Keycloak Configuration (REQUIRED - Application will fail to start without these)
       # Base URL of your Keycloak instance (without trailing slash)
-      KEYCLOAK_BASE_URL: http://keycloak:8080
+      KEYCLOAK_BASE_URL: ${FHIR_CERTIFICATION_KEYCLOAK_BASE_URL}
 
       # Keycloak realm name where your application is configured
-      KEYCLOAK_REALM: certification-realm
+      KEYCLOAK_REALM: ${FHIR_CERTIFICATION_KEYCLOAK_REALM}
 
       # Client ID of your application in Keycloak (used for authentication)
-      KEYCLOAK_CLIENT_ID: certification-fhir
+      KEYCLOAK_CLIENT_ID: ${FHIR_CERTIFICATION_KEYCLOAK_CLIENT_ID}
 
       # Client secret from your Keycloak client configuration
-      KEYCLOAK_CLIENT_SECRET: jGzXCkT36iGo3epnNpojd6LW4g7EDyM8
+      KEYCLOAK_CLIENT_SECRET: ${FHIR_CERTIFICATION_KEYCLOAK_CLIENT_SECRET}
 
       # Migration Configuration
-      MIGRATIONS_PATH: dist/src/infrastructure/database/migrations/*.js
+      MIGRATIONS_PATH: ${FHIR_CERTIFICATION_MIGRATIONS_PATH}
 
       # Admin User Configuration (for initialization)
-      ADMIN_EMAIL: admin@cegconsultores.com
-      ADMIN_PASSWORD: admin123%
+      ADMIN_EMAIL: ${FHIR_CERTIFICATION_ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${FHIR_CERTIFICATION_ADMIN_PASSWORD}
     networks:
       - kong-network
       - keycloak-network
