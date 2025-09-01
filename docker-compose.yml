@@ -252,7 +252,7 @@ services:
 
   # FHIR -Certification NestJS API
   fhir-certification:
-    image: robertoaraneda/ceg-nest-certification-backend:v1.2
+    image: robertoaraneda/ceg-nest-certification-backend:v1.3
     container_name: fhir-certification
     environment:
       PROJECT_NAME: ceg-nest-certification-backend
@@ -280,11 +280,13 @@ services:
       # Keycloak realm name where your application is configured
       KEYCLOAK_REALM: ${FHIR_CERTIFICATION_KEYCLOAK_REALM}
 
-      # Client ID of your application in Keycloak (used for authentication)
+      # Client ID of your applicati|on in Keycloak (used for authentication)
       KEYCLOAK_CLIENT_ID: ${FHIR_CERTIFICATION_KEYCLOAK_CLIENT_ID}
 
+      KC_ADMIN_CLIENT_ID: ${FHIR_CERTIFICATION_KC_ADMIN_CLIENT_ID}
+
       # Client secret from your Keycloak client configuration
-      KEYCLOAK_CLIENT_SECRET: ${FHIR_CERTIFICATION_KEYCLOAK_CLIENT_SECRET}
+      KC_ADMIN_CLIENT_SECRET: ${FHIR_CERTIFICATION_KC_ADMIN_CLIENT_SECRET}
 
       # Migration Configuration
       MIGRATIONS_PATH: ${FHIR_CERTIFICATION_MIGRATIONS_PATH}
