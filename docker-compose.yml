@@ -252,7 +252,7 @@ services:
 
   # FHIR -Certification NestJS API
   fhir-certification:
-    image: robertoaraneda/ceg-nest-certification-backend:v1.15
+    image: robertoaraneda/ceg-nest-certification-backend:v1.16
     container_name: fhir-certification
     environment:
       PROJECT_NAME: ceg-nest-certification-backend
