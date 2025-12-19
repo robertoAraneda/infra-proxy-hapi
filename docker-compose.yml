@@ -238,7 +238,7 @@ services:
 
   # FHIR Playground Frontend
   fhir-playground:
-    image: robertoaraneda/ceg-vue-certification-frontend:v1.6
+    image: robertoaraneda/ceg-vue-certification-frontend:v1.7
     container_name: fhir-playground
     networks:
       - proxy-network
